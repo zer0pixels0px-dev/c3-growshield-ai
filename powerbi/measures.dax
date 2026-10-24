@@ -1,0 +1,40 @@
+-- Mesures DAX C3 GrowShield AI (lot 2) — copier dans Power BI Desktop, table par table.
+-- Règle : un score NULL est ignoré par AVERAGE (jamais remplacé par 0).
+
+-- FactScores
+Score moyen =
+AVERAGE ( FactScores[score] )
+
+Cultivars scorés =
+CALCULATE (
+    DISTINCTCOUNT ( FactScores[cultivar_id] ),
+    NOT ISBLANK ( FactScores[score] )
+)
+
+Part score nul =
+DIVIDE (
+    DISTINCTCOUNT ( DimCultivar[cultivar_id] ) - [Cultivars scorés],
+    DISTINCTCOUNT ( DimCultivar[cultivar_id] )
+)
+
+-- FactMarketPrices (filtrer par devise et unité avant lecture)
+Prix médian observé =
+MEDIAN ( FactMarketPrices[price_amount] )
+
+Nombre de listings =
+DISTINCTCOUNT ( FactMarketPrices[listing_id] )
+
+-- FactScrapeRuns
+Taux doublons scraping =
+DIVIDE (
+    SUM ( FactScrapeRuns[items_skipped_duplicate] ),
+    SUM ( FactScrapeRuns[items_fetched] )
+)
+
+-- FactGrowCycles (poids déclarés/mesurés selon la source ; NULL ignoré)
+Rendement sec moyen (g) =
+AVERAGE ( FactGrowCycles[dry_weight_g] )
+
+-- Couverture sensorielle (à partir des dimensions, quand les tables de liaison sont importées)
+Cultivars avec terpènes =
+DISTINCTCOUNT ( DimCultivar[cultivar_id] )

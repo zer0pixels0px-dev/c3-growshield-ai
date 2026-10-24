@@ -40,3 +40,10 @@ AVERAGE ( FactGrowCycles[yield_indoor_g_m2] )
 
 Note : `RELATED` suppose la relation active FactScores → DimCultivar ;
 adapter les noms de tables/colonnes aux noms réels après import.
+
+## Lot 2
+Mesures complétées dans `measures.dax` (fichier DAX copiable) :
+score moyen, cultivars scorés, part score nul, prix médian observé,
+nombre de listings, taux doublons scraping, rendement sec moyen.
+Modèle finalisé en fichiers projet : `model.json`, `queries/*.m`,
+procédure `BUILD.md`. Aucun .pbix binaire livré (voir BUILD.md).

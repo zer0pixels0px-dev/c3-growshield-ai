@@ -1,1 +1,16 @@
-{"devDependencies":{"turbo":"^2.0.0","typescript":"^5.5.0"},"name":"c3-growshield-ai","packageManager":"pnpm@9.0.0","private":true,"scripts":{"build":"turbo run build","db:migrate":"psql \"$DATABASE_URL\" -f database/schema.sql -f database/indexes.sql -f database/views.sql -f database/functions.sql","db:seed":"psql \"$DATABASE_URL\" -f database/seed_data.sql","dev":"turbo run dev"},"version":"0.1.0"}
+{
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.5.0"
+  },
+  "name": "c3-growshield-ai",
+  "packageManager": "pnpm@9.0.0",
+  "private": true,
+  "scripts": {
+    "build": "turbo run build",
+    "db:migrate": "psql \"$DATABASE_URL\" -f database/schema.sql -f database/indexes.sql -f database/views.sql -f database/functions.sql -f database/migrations/002_updated_at_triggers.sql",
+    "db:seed": "psql \"$DATABASE_URL\" -f database/seed_data.sql",
+    "dev": "turbo run dev"
+  },
+  "version": "0.2.0"
+}
