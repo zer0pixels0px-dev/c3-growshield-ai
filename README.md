@@ -41,5 +41,4 @@ implémentation complète de l'API sur PostgreSQL, auth, tests, chapitres
 
 ## Dépôt
 Dépôt GitHub (créé par Alain) : `zer0pixels0px-dev/c3-growshield-ai`
-(public, branche `main`). Ce socle est prêt à pousser ; aucun push n'a
-été effectué par l'agent.
+(public, branche `main`). Socle v1 poussé le 2026-10-24.
