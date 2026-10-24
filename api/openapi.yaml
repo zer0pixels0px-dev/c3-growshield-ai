@@ -1,0 +1,283 @@
+openapi: 3.0.3
+info:
+  title: C3 GrowShield AI API
+  version: 0.1.0
+  description: >-
+    API REST v1, cohérente avec database/schema.sql. Règle anti-invention :
+    tout champ non documenté est null ou "non vérifié", jamais estimé.
+    Les scores null (aucun composant) se trient en dernier.
+servers:
+  - url: http://localhost:3001
+tags:
+  - { name: Cultivars }
+  - { name: Breeders }
+  - { name: Journaux }
+  - { name: Recherche }
+  - { name: Scores }
+  - { name: Alias }
+  - { name: Sources }
+paths:
+  /health:
+    get:
+      summary: Santé de l'API
+      responses:
+        '200': { description: OK, content: { application/json: { schema: { $ref: '#/components/schemas/Health' } } } }
+  /cultivars:
+    get:
+      tags: [Cultivars, Recherche]
+      summary: Lister / rechercher les cultivars (vue v_cultivar_scores)
+      parameters:
+        - { name: q, in: query, schema: { type: string }, description: Recherche sur nom et alias }
+        - { name: page, in: query, schema: { type: integer, default: 1 } }
+        - { name: per_page, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+        - { name: sort, in: query, schema: { type: string, enum: [score_desc, name_asc], default: score_desc }, description: score_desc met les scores null en dernier }
+      responses:
+        '200': { description: Liste paginée, content: { application/json: { schema: { $ref: '#/components/schemas/CultivarList' } } } }
+    post:
+      tags: [Cultivars]
+      summary: Créer un cultivar (rôle editor ou admin)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CultivarInput' } } } }
+      responses:
+        '201': { description: Créé, content: { application/json: { schema: { $ref: '#/components/schemas/Cultivar' } } } }
+        '400': { $ref: '#/components/responses/BadRequest' }
+  /cultivars/{id}:
+    get:
+      tags: [Cultivars]
+      summary: Fiche cultivar complète (terpènes, arômes, effets, culture, pedigree)
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      responses:
+        '200': { description: Fiche, content: { application/json: { schema: { $ref: '#/components/schemas/CultivarDetail' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Cultivars]
+      summary: Mettre à jour un cultivar
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/CultivarInput' } } } }
+      responses:
+        '200': { description: Mis à jour, content: { application/json: { schema: { $ref: '#/components/schemas/Cultivar' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Cultivars]
+      summary: Supprimer un cultivar (admin)
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      responses:
+        '204': { description: Supprimé }
+  /breeders:
+    get:
+      tags: [Breeders]
+      summary: Lister les breeders
+      responses:
+        '200': { description: Liste, content: { application/json: { schema: { $ref: '#/components/schemas/BreederList' } } } }
+    post:
+      tags: [Breeders]
+      summary: Créer un breeder (vérification "non vérifié" par défaut)
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BreederInput' } } } }
+      responses:
+        '201': { description: Créé, content: { application/json: { schema: { $ref: '#/components/schemas/Breeder' } } } }
+  /breeders/{id}:
+    get:
+      tags: [Breeders]
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      responses:
+        '200': { description: Breeder, content: { application/json: { schema: { $ref: '#/components/schemas/Breeder' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    patch:
+      tags: [Breeders]
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/BreederInput' } } } }
+      responses:
+        '200': { description: Mis à jour, content: { application/json: { schema: { $ref: '#/components/schemas/Breeder' } } } }
+  /journals:
+    get:
+      tags: [Journaux]
+      summary: Lister les journaux de culture
+      parameters:
+        - { name: cultivar_id, in: query, schema: { type: string, format: uuid } }
+        - { name: source_platform, in: query, schema: { type: string, enum: [growdiaries, thcfarmer, rollitup, overgrow, reddit, manuel] } }
+      responses:
+        '200': { description: Liste, content: { application/json: { schema: { $ref: '#/components/schemas/JournalList' } } } }
+    post:
+      tags: [Journaux]
+      summary: Créer un journal
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/JournalInput' } } } }
+      responses:
+        '201': { description: Créé, content: { application/json: { schema: { $ref: '#/components/schemas/Journal' } } } }
+  /journals/{id}:
+    get:
+      tags: [Journaux]
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      responses:
+        '200': { description: Journal avec entrées, content: { application/json: { schema: { $ref: '#/components/schemas/JournalDetail' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+  /journals/{id}/entries:
+    post:
+      tags: [Journaux]
+      summary: Ajouter une entrée de journal
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/JournalEntryInput' } } } }
+      responses:
+        '201': { description: Entrée créée, content: { application/json: { schema: { $ref: '#/components/schemas/JournalEntry' } } } }
+  /search:
+    get:
+      tags: [Recherche]
+      summary: Recherche globale (cultivars, breeders, alias)
+      parameters: [ { name: q, in: query, required: true, schema: { type: string, minLength: 2 } } ]
+      responses:
+        '200': { description: Résultats, content: { application/json: { schema: { $ref: '#/components/schemas/SearchResult' } } } }
+  /cultivars/{id}/scores:
+    get:
+      tags: [Scores]
+      summary: Score commercial et composants d'un cultivar
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      responses:
+        '200': { description: Score, content: { application/json: { schema: { $ref: '#/components/schemas/Score' } } } }
+        '404': { $ref: '#/components/responses/NotFound' }
+    post:
+      tags: [Scores]
+      summary: Recalculer le score (fonction compute_commercial_score)
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      responses:
+        '200': { description: Score recalculé, content: { application/json: { schema: { $ref: '#/components/schemas/Score' } } } }
+  /cultivars/{id}/aliases:
+    get:
+      tags: [Alias]
+      summary: Alias d'un cultivar
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      responses:
+        '200': { description: Alias, content: { application/json: { schema: { $ref: '#/components/schemas/AliasList' } } } }
+    post:
+      tags: [Alias]
+      summary: Proposer un alias (file alias_proposals, validation humaine)
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      requestBody: { required: true, content: { application/json: { schema: { $ref: '#/components/schemas/AliasProposalInput' } } } }
+      responses:
+        '201': { description: Proposition créée, content: { application/json: { schema: { $ref: '#/components/schemas/AliasProposal' } } } }
+  /alias-proposals/{id}:
+    patch:
+      tags: [Alias]
+      summary: Accepter / rejeter une proposition d'alias (editor, admin)
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      requestBody: { required: true, content: { application/json: { schema: { properties: { status: { type: string, enum: [acceptée, rejetée] } }, required: [status] } } } }
+      responses:
+        '200': { description: Proposition traitée, content: { application/json: { schema: { $ref: '#/components/schemas/AliasProposal' } } } }
+  /sources:
+    get:
+      tags: [Sources]
+      summary: Sources de scraping déclarées et derniers runs
+      responses:
+        '200': { description: Sources, content: { application/json: { schema: { $ref: '#/components/schemas/SourceList' } } } }
+  /sources/{id}/runs:
+    get:
+      tags: [Sources]
+      summary: Runs de scraping d'une source
+      parameters: [ { name: id, in: path, required: true, schema: { type: string, format: uuid } } ]
+      responses:
+        '200': { description: Runs, content: { application/json: { schema: { $ref: '#/components/schemas/ScrapeRunList' } } } }
+components:
+  responses:
+    BadRequest: { description: Requête invalide }
+    NotFound: { description: Ressource introuvable }
+  schemas:
+    Health: { type: object, properties: { status: { type: string }, version: { type: string } } }
+    VerificationStatus: { type: string, enum: ["vérifié", "non vérifié", "contesté"] }
+    Cultivar:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        canonical_name: { type: string }
+        breeder_id: { type: string, format: uuid, nullable: true }
+        breeder_verification_status: { $ref: '#/components/schemas/VerificationStatus' }
+        plant_type: { type: string, nullable: true }
+        thc_min_percent: { type: number, nullable: true }
+        thc_max_percent: { type: number, nullable: true }
+    CultivarInput:
+      type: object
+      required: [name, canonical_name]
+      properties:
+        name: { type: string }
+        canonical_name: { type: string }
+        breeder_id: { type: string, format: uuid }
+        plant_type: { type: string }
+        thc_min_percent: { type: number, nullable: true }
+        thc_max_percent: { type: number, nullable: true }
+    CultivarList:
+      type: object
+      properties:
+        data: { type: array, items: { $ref: '#/components/schemas/Cultivar' } }
+        page: { type: integer }
+        per_page: { type: integer }
+        total: { type: integer }
+    CultivarDetail:
+      allOf:
+        - { $ref: '#/components/schemas/Cultivar' }
+        - type: object
+          properties:
+            terpenes: { type: array, items: { type: object } }
+            aromas: { type: array, items: { type: object } }
+            effects: { type: array, items: { type: object } }
+            cultivation: { type: object, nullable: true }
+            pedigree: { type: array, items: { type: object } }
+    Breeder:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        canonical_name: { type: string }
+        verification_status: { $ref: '#/components/schemas/VerificationStatus' }
+    BreederInput:
+      type: object
+      required: [name, canonical_name]
+      properties: { name: { type: string }, canonical_name: { type: string }, country_code: { type: string }, website_url: { type: string } }
+    BreederList: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Breeder' } } } }
+    Journal:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        cycle_id: { type: string, format: uuid }
+        title: { type: string }
+        source_platform: { type: string, nullable: true }
+        source_url: { type: string, nullable: true }
+    JournalInput:
+      type: object
+      required: [cycle_id, title]
+      properties: { cycle_id: { type: string, format: uuid }, title: { type: string }, is_public: { type: boolean }, source_platform: { type: string }, source_url: { type: string } }
+    JournalList: { type: object, properties: { data: { type: array, items: { $ref: '#/components/schemas/Journal' } } } }
+    JournalEntry:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        entry_date: { type: string, format: date }
+        growth_stage: { type: string, nullable: true }
+        note_fr: { type: string, nullable: true }
+    JournalEntryInput:
+      type: object
+      required: [entry_date]
+      properties: { entry_date: { type: string, format: date }, growth_stage: { type: string }, week_number: { type: integer }, height_cm: { type: number }, note_fr: { type: string } }
+    JournalDetail:
+      allOf:
+        - { $ref: '#/components/schemas/Journal' }
+        - type: object
+          properties: { entries: { type: array, items: { $ref: '#/components/schemas/JournalEntry' } } }
+    SearchResult:
+      type: object
+      properties:
+        cultivars: { type: array, items: { $ref: '#/components/schemas/Cultivar' } }
+        breeders: { type: array, items: { $ref: '#/components/schemas/Breeder' } }
+    Score:
+      type: object
+      properties:
+        cultivar_id: { type: string, format: uuid }
+        score: { type: number, nullable: true, description: "null = aucun composant documenté" }
+        completeness: { type: string, enum: [complet, partiel, nul] }
+        components: { type: array, items: { type: object, properties: { component: { type: string }, normalized_value: { type: number, nullable: true }, weight_percent: { type: number } } } }
+    AliasList: { type: object, properties: { data: { type: array, items: { type: object, properties: { alias: { type: string }, alias_type: { type: string } } } } } }
+    AliasProposalInput: { type: object, required: [proposed_alias], properties: { proposed_alias: { type: string } } }
+    AliasProposal:
+      type: object
+      properties:
+        id: { type: string, format: uuid }
+        proposed_alias: { type: string }
+        status: { type: string, enum: ["en attente", acceptée, rejetée] }
+    SourceList: { type: object, properties: { data: { type: array, items: { type: object, properties: { code: { type: string }, name: { type: string }, is_active: { type: boolean } } } } } }
+    ScrapeRunList: { type: object, properties: { data: { type: array, items: { type: object, properties: { id: { type: string, format: uuid }, status: { type: string }, items_fetched: { type: integer }, items_skipped_duplicate: { type: integer } } } } } }

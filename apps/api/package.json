@@ -1,0 +1,1 @@
+{"dependencies":{"express":"^4.19.0","pg":"^8.12.0"},"devDependencies":{"@types/express":"^4.17.0","@types/node":"^20.0.0","@types/pg":"^8.11.0","tsx":"^4.0.0","typescript":"^5.5.0"},"name":"@growshield/api","private":true,"scripts":{"build":"tsc","dev":"tsx watch src/index.ts","start":"node dist/index.js"},"version":"0.1.0"}
